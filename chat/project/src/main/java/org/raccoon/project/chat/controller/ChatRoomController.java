@@ -3,7 +3,9 @@ package org.raccoon.project.chat.controller;
 import java.util.List;
 
 import org.raccoon.project.chat.model.ChatRoom;
+import org.raccoon.project.chat.model.LoginInfo;
 import org.raccoon.project.chat.repository.ChatRoomRepository;
+import org.raccoon.project.chat.service.JwtTokenProvider;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,15 +14,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Controller
 @RequestMapping("/chat")
 public class ChatRoomController {
 
     private final ChatRoomRepository chatRoomRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public ChatRoomController(ChatRoomRepository chatRoomRepository){
+    public ChatRoomController(ChatRoomRepository chatRoomRepository, JwtTokenProvider jwtTokenProvider){
         this.chatRoomRepository = chatRoomRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @GetMapping("/room")
@@ -50,5 +56,13 @@ public class ChatRoomController {
     @ResponseBody
     public ChatRoom roomInfo(@PathVariable String roomId) {
         return chatRoomRepository.findRoomById(roomId);
+    }
+
+    @GetMapping("/user")
+    @ResponseBody
+    public LoginInfo getUserInfo() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = auth.getName();
+        return LoginInfo.builder().name(name).token(jwtTokenProvider.generateToken(name)).build();
     }
 }
